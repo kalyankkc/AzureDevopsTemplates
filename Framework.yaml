@@ -67,35 +67,7 @@ stages:
         codeCoverageEnabled: false
       enabled: true
 
-    - task: CoverageConverter@0
-      inputs:
-        searchFolderForTestFiles: '$(System.DefaultWorkingDirectory)'
-        vsTestExeFileLocation: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe'
-        vsTestArgs: '/EnableCodeCoverage'
-        listTestFiles: 'd:\a\1\s\tests\Tests\bin\Release\Tests.dll'  # your test dll file name with exact path
-        temporaryFolderForCodeCoverage: 'Agent.TempDirectory'
-        temporaryFileCoveragexml: '\TestResults\DynamicCodeCoverage.coveragexml'
-        codeCoverageExeFileLocation: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe'
-      enabled: true
-
-    - task: reportgenerator@4
-      displayName: 'Generate Coverage Report'
-      inputs:
-        reports: '$(Agent.TempDirectory)\TestResults\DynamicCodeCoverage.coveragexml'
-        targetdir: '$(System.DefaultWorkingDirectory)\TestResults\Coverage\Reports'
-        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;Badges'
-      enabled: true
-
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish Coverage Report'
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)\TestResults\Coverage\Reports\Cobertura.xml'
-        reportDirectory: '$(System.DefaultWorkingDirectory)\TestResults\Coverage\Reports'
-      enabled: true
-    - task: SonarCloudAnalyze@1
-      enabled: true
-
+    
     - task: SonarCloudPublish@1
       inputs:
         pollingTimeoutSec: '300'
@@ -104,22 +76,6 @@ stages:
       inputs:
         SonarCloud: 'sonarcloud'
         organization: 'sri2580'
-      enabled: true
-
-    - task: CopyFiles@2
-      displayName: 'Copy Files to: $(Build.TemplateStagingDirectory)'
-      inputs:
-        SourceFolder: 'Arm Templates'
-        Contents: '*.json'
-        TargetFolder: '$(Build.TemplateStagingDirectory)'
-      enabled: true
-
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: AzureTemplates'
-      inputs:
-        PathtoPublish: '$(Build.TemplateStagingDirectory)'
-        ArtifactName: 'AzureTemplates'
-        publishLocation: 'Container'
       enabled: true
 
     - task: PublishBuildArtifacts@1
@@ -163,34 +119,6 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: AzureResourceGroupDeployment@2
-            displayName: 'Azure Deployment:Create Or Update Resource Group'
-            inputs:
-              azureSubscription: 'Azure-access'
-              resourceGroupName: '$(resourceGroupName)'
-              location: '$(location)'
-              csmFile: '$(Pipeline.Workspace)/ArmTemplates/windows-webapp-sql-template.json'
-              overrideParameters: '-webAppName $(WebAppName) -hostingPlanName test-plan -appInsightsLocation "Central US" -sku "F1 Free" -databaseServerName $(databaseServerName) -databaseUsername $(SqlUsername) -databasePassword $(SqlPassword) -databaseLocation "East US" -databaseName $(DatabaseName) -databaseEdition "Basic"'
-            enabled: true
-
-          - task: SqlAzureDacpacDeployment@1
-            displayName: 'Azure SQL DacpacTask'
-            inputs:
-              azureSubscription: 'Azure-access'
-              AuthenticationType: 'server'
-              ServerName: '$(ServerName)'
-              DatabaseName: '$(DatabaseName)'
-              SqlUsername: '$(SqlUsername)'
-              SqlPassword: '$(SqlPassword)'
-              deployType: 'DacpacTask'
-              DeploymentAction: 'Publish'
-              DacpacFile: '$(Pipeline.Workspace)/**/*.dacpac'
-             # IpDetectionMethod: 'IPAddressRange'
-             # StartIpAddress: '34.72.142.230'
-             # EndIpAddress: '34.72.142.230'
-             # DeleteFirewallRule: false
-            enabled: true
-
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
@@ -203,23 +131,6 @@ stages:
               DeploymentType: 'webDeploy'
               RemoveAdditionalFilesFlag: true
               enableXmlVariableSubstitution: true
-            enabled: true
-
-          
-          - task: AzureAppServiceSettings@1
-            inputs:
-              azureSubscription: 'Azure-access'
-              appName: '$(WebAppName)'
-              resourceGroupName: '$(resourceGroupName)'
-              connectionStrings: |
-                [
-                   {
-                    "name": "WebAppContext", # please check your connection string name in application
-                    "value": "Server=tcp:$(ServerName),1433;Initial Catalog=$(DatabaseName);User ID=$(SqlUsername);Password=$(SqlPassword);",
-                    "type": "SQLServer",
-                    "slotSetting": false
-                   }
-                ]
             enabled: true
 
 
