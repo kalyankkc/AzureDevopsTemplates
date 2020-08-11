@@ -1,11 +1,3 @@
-pr:
-  branches:
-    include:
-      - master
-  paths:
-    exclude:
-      - docs/*
-      - README.md
 
 trigger:
  branches:
@@ -139,14 +131,14 @@ stages:
         SourceFolder: 'Arm Templates'
         Contents: '**'
         TargetFolder: '$(Build.TemplatesDirectory)'
-      enabled: true
+      enabled: false
 
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.TemplatesDirectory)'
         ArtifactName: 'ArmTemplates'
         publishLocation: 'Container'
-      enabled: true
+      enabled: false
 
   - job: Database
     dependsOn: Webapp
@@ -167,75 +159,75 @@ stages:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
       enabled: true
       
-- stage: prod
-  displayName: 'Deploy to prod'
-  dependsOn: Build
-  jobs:
-  - deployment: Production
-    pool: 
-      vmImage: windows-latest
-    variables:
-    - group: 'Release'
-    environment: 'Production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: AzureResourceGroupDeployment@2
-            displayName: 'Azure Deployment:Create Or Update Resource Group'
-            inputs:
-              azureSubscription: 'Azure-access' #provide your subscription details
-              resourceGroupName: '$(resourceGroupName)'
-              location: '$(location)'
-              csmFile: '$(Pipeline.Workspace)/ArmTemplates/windows-webapp-sql-template.json'
-              overrideParameters: '-webAppName $(WebAppName) -hostingPlanName test-plan -appInsightsLocation "Central US" -sku "F1 Free" -databaseServerName $(databaseServerName) -databaseUsername $(SqlUsername) -databasePassword $(SqlPassword) -databaseLocation "East US" -databaseName $(DatabaseName) -databaseEdition "Basic"'
-            enabled: true
+# - stage: prod
+#   displayName: 'Deploy to prod'
+#   dependsOn: Build
+#   jobs:
+#   - deployment: Production
+#     pool: 
+#       vmImage: windows-latest
+#     variables:
+#     - group: 'Release'
+#     environment: 'Production'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: AzureResourceGroupDeployment@2
+#             displayName: 'Azure Deployment:Create Or Update Resource Group'
+#             inputs:
+#               azureSubscription: 'Azure-access' #provide your subscription details
+#               resourceGroupName: '$(resourceGroupName)'
+#               location: '$(location)'
+#               csmFile: '$(Pipeline.Workspace)/ArmTemplates/windows-webapp-sql-template.json'
+#               overrideParameters: '-webAppName $(WebAppName) -hostingPlanName test-plan -appInsightsLocation "Central US" -sku "F1 Free" -databaseServerName $(databaseServerName) -databaseUsername $(SqlUsername) -databasePassword $(SqlPassword) -databaseLocation "East US" -databaseName $(DatabaseName) -databaseEdition "Basic"'
+#             enabled: true
 
-          - task: SqlAzureDacpacDeployment@1
-            displayName: 'Azure SQL DacpacTask'
-            inputs:
-              azureSubscription: 'Azure-access'
-              AuthenticationType: 'server'
-              ServerName: '$(ServerName)'
-              DatabaseName: '$(DatabaseName)'
-              SqlUsername: '$(SqlUsername)'
-              SqlPassword: '$(SqlPassword)'
-              deployType: 'DacpacTask'
-              DeploymentAction: 'Publish'
-              DacpacFile: '$(Pipeline.Workspace)/**/*.dacpac'
-             # IpDetectionMethod: 'IPAddressRange'
-             # StartIpAddress: '34.72.142.230'
-             # EndIpAddress: '34.72.142.230'
-             # DeleteFirewallRule: false
-            enabled: true
+#           - task: SqlAzureDacpacDeployment@1
+#             displayName: 'Azure SQL DacpacTask'
+#             inputs:
+#               azureSubscription: 'Azure-access'
+#               AuthenticationType: 'server'
+#               ServerName: '$(ServerName)'
+#               DatabaseName: '$(DatabaseName)'
+#               SqlUsername: '$(SqlUsername)'
+#               SqlPassword: '$(SqlPassword)'
+#               deployType: 'DacpacTask'
+#               DeploymentAction: 'Publish'
+#               DacpacFile: '$(Pipeline.Workspace)/**/*.dacpac'
+#              # IpDetectionMethod: 'IPAddressRange'
+#              # StartIpAddress: '34.72.142.230'
+#              # EndIpAddress: '34.72.142.230'
+#              # DeleteFirewallRule: false
+#             enabled: true
 
-          - task: AzureRmWebAppDeployment@4
-            inputs:
-              ConnectionType: 'AzureRM'
-              azureSubscription: 'Azure-access'
-              appType: 'webApp'
-              WebAppName: '$(WebAppName)'
-              packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
-              AppSettings: '-ASPNETCORE_ENVIRONMENT Production'
-              enableCustomDeployment: true
-              DeploymentType: 'webDeploy'
-              RemoveAdditionalFilesFlag: true
-              enableXmlVariableSubstitution: true
-            enabled: true
+#           - task: AzureRmWebAppDeployment@4
+#             inputs:
+#               ConnectionType: 'AzureRM'
+#               azureSubscription: 'Azure-access'
+#               appType: 'webApp'
+#               WebAppName: '$(WebAppName)'
+#               packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
+#               AppSettings: '-ASPNETCORE_ENVIRONMENT Production'
+#               enableCustomDeployment: true
+#               DeploymentType: 'webDeploy'
+#               RemoveAdditionalFilesFlag: true
+#               enableXmlVariableSubstitution: true
+#             enabled: true
 
           
-          - task: AzureAppServiceSettings@1
-            inputs:
-              azureSubscription: 'Azure-access'
-              appName: '$(WebAppName)'
-              resourceGroupName: '$(resourceGroupName)'
-              connectionStrings: |
-                [
-                   {
-                    "name": "WebAppContext", #please check your connection string name in application
-                    "value": "Server=tcp:$(ServerName),1433;Initial Catalog=$(DatabaseName);User ID=$(SqlUsername);Password=$(SqlPassword);",
-                    "type": "SQLServer",
-                    "slotSetting": false
-                   }
-                ]
-            enabled: true
+#           - task: AzureAppServiceSettings@1
+#             inputs:
+#               azureSubscription: 'Azure-access'
+#               appName: '$(WebAppName)'
+#               resourceGroupName: '$(resourceGroupName)'
+#               connectionStrings: |
+#                 [
+#                    {
+#                     "name": "WebAppContext", #please check your connection string name in application
+#                     "value": "Server=tcp:$(ServerName),1433;Initial Catalog=$(DatabaseName);User ID=$(SqlUsername);Password=$(SqlPassword);",
+#                     "type": "SQLServer",
+#                     "slotSetting": false
+#                    }
+#                 ]
+#             enabled: true
