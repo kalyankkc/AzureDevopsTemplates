@@ -108,7 +108,7 @@ stages:
     - task: sonarcloud-buildbreaker@2
       inputs:
         SonarCloud: 'sonarcloud'
-        organization: 'sri2580'
+        organization: 'devops-1'
       enabled: true
     
     - task: PublishCodeCoverageResults@1
