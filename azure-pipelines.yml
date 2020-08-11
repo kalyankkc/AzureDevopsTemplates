@@ -61,10 +61,10 @@ stages:
       displayName: sonarcloud Preparations
       inputs:
         SonarCloud: 'sonarcloud'
-        organization: 'sri2580'
+        organization: 'devops-1'
         scannerMode: 'MSBuild'
-        projectKey: 'employees'
-        projectName: 'Employee Project'
+        projectKey: 'pkey-1'
+        projectName: 'p-1'
         extraProperties: |
          sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/TestResults/Coverage/coverage.opencover.xml
          sonar.exclusions=**/wwwroot/lib/**/*
